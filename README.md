@@ -1,1 +1,1 @@
-# chatbox-with-rag
+# chatbot
