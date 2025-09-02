@@ -5,22 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/chatbot.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/chatbox-with-rag.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/collection/pdf_collection.py" beforeDir="false" afterPath="$PROJECT_DIR$/collection/pdf_collection.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/c6c4f207-dbeb-40ae-b201-0b2d1a411f99/data_level0.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/c6c4f207-dbeb-40ae-b201-0b2d1a411f99/header.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/c6c4f207-dbeb-40ae-b201-0b2d1a411f99/length.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/c6c4f207-dbeb-40ae-b201-0b2d1a411f99/link_lists.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/chroma.sqlite3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/e98e63cb-cea5-468d-9752-45d7df7e705d/data_level0.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/e98e63cb-cea5-468d-9752-45d7df7e705d/header.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/e98e63cb-cea5-468d-9752-45d7df7e705d/length.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/embedding/chroma_langchain_db/e98e63cb-cea5-468d-9752-45d7df7e705d/link_lists.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/output.txt" beforeDir="false" afterPath="$PROJECT_DIR$/collection/output.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/embedding/vector_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/embedding/vector_store.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/llm/llm_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/llm_model.py" afterDir="false" />
     </list>
