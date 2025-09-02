@@ -2,7 +2,7 @@ from langchain_chroma import Chroma
 from langchain_community.document_loaders import TextLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+from transformers import AutoTokenizer
 
 class VectorStore:
     def __init__(self, model_name: str, raw_documents_path: str) -> None:
@@ -13,11 +13,11 @@ class VectorStore:
 
         # Load the document, split it into chunks, embed each chunk and load it into the vector store.
         raw_documents = TextLoader(self.raw_documents_path).load()
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=512,
-            chunk_overlap=50,
-            length_function=len,
-            is_separator_regex=False,
+        tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
+        text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+            tokenizer=tokenizer,
+            chunk_size=256,
+            chunk_overlap=20
         )
         documents = text_splitter.split_documents(raw_documents)
 
@@ -33,10 +33,10 @@ class VectorStore:
 
 if __name__ == "__main__":
     embedding_and_db_vector = VectorStore(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        raw_documents_path="../collection/corpus.txt",
+        model_name="AITeamVN/Vietnamese_Embedding_v2",
+        raw_documents_path="../collection/output.txt",
     )
     vector_store = embedding_and_db_vector.embed_model()
-    retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 2})
+    retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={'k': 5, 'fetch_k': 50})
     docs = retriever.invoke("địa chỉ")
     print(docs)
