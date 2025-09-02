@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkName" value="Python 3.13 (fastapi-mail)" />
+    <option name="enabledOnReformat" value="true" />
+    <option name="enabledOnSave" value="true" />
+    <option name="sdkName" value="Python 3.13 (chatbot)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (chatbox-with-rag)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (chatbot)" project-jdk-type="Python SDK" />
 </project>

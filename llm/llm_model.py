@@ -5,21 +5,21 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 # --- Load vector store và retriever ---
 path_file = "../embedding/chroma_langchain_db"
-embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embedding = HuggingFaceEmbeddings(model_name="AITeamVN/Vietnamese_Embedding")
 
 vector_store = Chroma(
     persist_directory=path_file,
     embedding_function=embedding,
     collection_name="customer-service",
 )
-retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 2})
+retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 3})
 
 # --- Ollama LLM ---
 llm = ChatOllama(
-    model="llama2:7b",
+    model="deepseek-r1:8b",
     temperature=0.01,
     num_predict=256,
-    validate_model_on_init=True
+    validate_model_on_init=True,
 )
 
 # --- Prompt template ---
@@ -28,20 +28,21 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             "Bạn là trợ lý ảo tên là Quatest 3. "
-            "Nhiệm vụ của bạn là trả lời khách hàng bằng tiếng Việt, ngắn gọn và dễ hiểu."
+            "Nhiệm vụ của bạn là trả lời khách hàng bằng tiếng Việt, ngắn gọn và dễ hiểu.",
         ),
         (
             "system",
             "Câu hỏi của khách hàng: {question}\n\n"
             "Thông tin tìm thấy trong cơ sở dữ liệu:\n{context}\n\n"
-            "Hãy tóm tắt và đưa ra câu trả lời phù hợp bằng tiếng Việt."
+            "Hãy tóm tắt và đưa ra câu trả lời phù hợp bằng tiếng Việt. Lưu ý khi không có thông tin phù hợp trong cơ sở dữ liệu thì trả lời không có thông tin",
         ),
     ]
 )
 
 # --- Truy vấn ---
-question = "Quatest 3 giới thiệu"
+question = "địa chỉ Trung tâm 3"
 docs = retriever.invoke(question)
+print(f"query context: {docs}")
 
 # Lấy nội dung từ các chunk
 contents = [doc.page_content for doc in docs]
