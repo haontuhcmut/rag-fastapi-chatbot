@@ -5,13 +5,33 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/app/db_vector/db.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/embedings/store_embedding.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/llm/llm_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/llm_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/search_embedding.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/output.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/pdf_collection.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/collection/w2t.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/embedding/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/embedding/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/sentence_embeddings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/embedding/vector_store.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/llm/embedding/chroma_langchain_db/chroma.sqlite3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/split_text/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/split_text/sliptters.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -27,23 +47,35 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.chunks.executor": "Run",
+    "Python.db.executor": "Run",
+    "Python.evaluate_embedding.executor": "Run",
     "Python.llm_model.executor": "Run",
+    "Python.metric.executor": "Run",
     "Python.pdf_collection.executor": "Run",
+    "Python.search_embedding.executor": "Run",
+    "Python.sentence_embeddings.executor": "Run",
+    "Python.store_embedding.executor": "Run",
+    "Python.test.executor": "Run",
     "Python.vector_store.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/haonguyen/Desktop/chatbot/collection",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+    "last_opened_file_path": "/Users/haonguyen/Desktop/chatbot/document",
+    "settings.editor.selected.configurable": "com.jetbrains.python.black.configuration.BlackFormatterConfigurable"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/document" />
       <recent name="$PROJECT_DIR$/collection" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/app/embedings" />
+      <recent name="$PROJECT_DIR$/app/db_vector" />
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/documents" />
     </key>
   </component>
