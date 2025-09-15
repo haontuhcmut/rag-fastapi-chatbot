@@ -1,11 +1,8 @@
-from sqlmodel import Session
-
 from app.document_storage.services import GoogleDriveService
 from fastapi import HTTPException
 from googleapiclient.http import MediaIoBaseDownload
 import io
 import logging
-from pathlib import Path
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_docling import DoclingLoader
@@ -29,7 +26,6 @@ DATABASE_URL = Config.DATABASE_URL
 
 class DocProcessing(DoclingLoader):
     """Class to download a PDF from Google Drive, chunk it, and delete the file."""
-
     def __init__(
         self,
         model: str | None = EMBEDDING_MODEL,
@@ -37,17 +33,12 @@ class DocProcessing(DoclingLoader):
         chunk_overlap: int | None = 50,
         model_kwargs: Optional[Dict[str, Any]] = None,
         encode_kwargs: Optional[Dict[str, Any]] = None,
-        file_path: str | None = None,
     ):
 
         if model_kwargs is None:
             model_kwargs = {"device": "cpu"}
         if encode_kwargs is None:
             encode_kwargs = {"normalize_embeddings": True}
-
-        # Initialize without file_path; set later in load_and_split
-        super().__init__(file_path=self.file_path)
-        self.file_path = file_path
 
         # Initialize tokenizer and embedder
         self.tokenizer = AutoTokenizer.from_pretrained(model)
@@ -101,8 +92,6 @@ class DocProcessing(DoclingLoader):
             Path(output_dir).mkdir(exist_ok=True)
             temp_file_path = Path(output_dir) / file_name
 
-            self.file_path = str(temp_file_path)
-
             with open(temp_file_path, "wb") as f:
                 f.write(fh.getvalue())
 
@@ -115,6 +104,7 @@ class DocProcessing(DoclingLoader):
                 "file_id": file_id,
                 "file_name": file_name,
                 "mime_type": mime_type,
+                "path_file": temp_file_path,
             }
 
         except HttpError as e:
@@ -133,17 +123,9 @@ class DocProcessing(DoclingLoader):
         except Exception as e:
             logger.error(f"Error: {str(e)}")
 
-    def load_and_split(self, file_path: str | None = None):
-        """Generator function to yield chunks from the document."""
-        if file_path is not None:
-            self.file_path = file_path
-
-        if not self.file_path or not Path(self.file_path).exists():
-            raise HTTPException(status_code=404, detail="File not found for processing")
-
+    def load_and_split(self, file_path: str):
         try:
-            # Initialize DoclingLoader with text file
-            super().__init__(file_path=self.file_path)
+            super().__init__(file_path=file_path)
             doc_iter = self.lazy_load()
             for doc in doc_iter:
                 chunks = self.text_splitter.split_text(doc.page_content)
@@ -162,3 +144,16 @@ class DocProcessing(DoclingLoader):
         except Exception as e:
             logger.error(f"Error encoding texts: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error encoding texts: {str(e)}")
+
+
+if __name__ == "__main__":
+    document_processing_service = DocProcessing()
+    from pathlib import Path
+
+    base_dir = Path(__file__).resolve().parent.parent
+    file_path = base_dir.parent/"document/data.pdf"
+    collect_chunks = document_processing_service.load_and_split(file_path)
+    for chunks in collect_chunks:
+        for i, chunk in enumerate(chunks):
+            vector = document_processing_service.encode(chunk)
+            print(f"Chunk {i+1} embedding (first 5 values): {vector[:5]}")

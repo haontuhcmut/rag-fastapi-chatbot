@@ -1,5 +1,5 @@
 import numpy as np
-from app.embedings.sentence_embeddings import Embeddings
+from embedings.sentence_embeddings import Embeddings
 from app.db_vector.db import get_conn
 
 

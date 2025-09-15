@@ -1,7 +1,7 @@
-from app.embedings.chunks import Chunks
+from embedings.chunks import Chunks
 from pathlib import Path
 from sklearn.metrics.pairwise import cosine_similarity
-from app.embedings.sentence_embeddings import Embeddings
+from embedings.sentence_embeddings import Embeddings
 from app.db_vector.db import get_conn
 import numpy as np
 

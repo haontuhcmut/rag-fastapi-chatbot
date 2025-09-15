@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from app.embedings.chunks import Chunks
-from app.embedings.sentence_embeddings import Embeddings
+from embedings.chunks import Chunks
+from embedings.sentence_embeddings import Embeddings
 from app.db_vector.session import get_conn
 
 

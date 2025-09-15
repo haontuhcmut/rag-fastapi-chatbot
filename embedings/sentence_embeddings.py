@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from langchain_huggingface import HuggingFaceEmbeddings
-from app.embedings.chunks import Chunks
+from embedings.chunks import Chunks
 from pathlib import Path
 
 class Embeddings:

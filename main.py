@@ -1,7 +1,7 @@
 from collection.pdf_collection import PDFCollection
 import asyncio
 
-path_file = "./document/data.pdf"
+path_file = "document/data.pdf"
 
 loader = PDFCollection(path_file)
 

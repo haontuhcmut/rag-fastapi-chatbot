@@ -6,7 +6,6 @@ app/__init__.py
 app/__pycache__/
 app/db_vector/__init__.py
 app/db_vector/__pycache__/
-app/embedings/__init__.py
-app/embedings/__pycache__/
 credentials.json
 token.json
+.idea/workspace.xml
