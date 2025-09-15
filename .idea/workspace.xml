@@ -4,23 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/db_vector/dependency.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/db_vector/model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/db_vector/session.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/doc_processing/services.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/document_storage/routes.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/tests/test_doc_processing.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/vector_embedding/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/db_vector/db.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/embedings/chunks.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/chunks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/embedings/evaluate_embedding.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/evaluate_embedding.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/embedings/search_embedding.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/search_embedding.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/embedings/store_embedding.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/embedings/add_in_db.py" afterDir="false" />
-    </list>
+    <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
