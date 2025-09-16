@@ -1,34 +1,27 @@
-from app.document_storage.services import GoogleDriveService
 from fastapi import HTTPException
-from googleapiclient.http import MediaIoBaseDownload
-import io
 import logging
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_docling import DoclingLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 from app.config import Config
-from googleapiclient.errors import HttpError
 from typing import Optional, Dict, Any
-
-
-google_drive_service = GoogleDriveService()
-logger = logging.getLogger(__name__)
-
+import psycopg
+from pgvector.psycopg import register_vector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 EMBEDDING_MODEL = Config.EMBEDDING_MODEL
-DATABASE_URL = Config.DATABASE_URL
-
+PSYCOPG_CONNECT = Config.PSYCOPG_CONNECT
 
 class DocProcessing(DoclingLoader):
-    """Class to download a PDF from Google Drive, chunk it, and delete the file."""
+    """Class to split token from file, chunk it."""
+
     def __init__(
         self,
-        model: str | None = EMBEDDING_MODEL,
+        model: str | None = str("sentence-transformers/all-MiniLM-L6-v2"),
         chunk_size: int | None = 256,
         chunk_overlap: int | None = 50,
         model_kwargs: Optional[Dict[str, Any]] = None,
@@ -53,76 +46,6 @@ class DocProcessing(DoclingLoader):
             chunk_overlap=chunk_overlap,
         )
 
-    def download_and_save(self, file_id: str, output_dir: str = "temp_files"):
-        """Download a PDF, preprocess, chunk, print chunks, and delete files."""
-        try:
-            credentials = google_drive_service.load_credentials()
-            if not credentials or not credentials.valid:
-                logger.warning("Invalid credentials, re-authentication required")
-                raise HTTPException(
-                    status_code=401,
-                    detail="Could not validate credentials. Please authenticate via /drive/auth",
-                )
-            drive_service = google_drive_service.get_drive_service(credentials)
-
-            # Get file metadata
-            file_metadata = (
-                drive_service.files()
-                .get(fileId=file_id, fields="name, mimeType")
-                .execute()
-            )
-            file_name = file_metadata.get("name", "downloaded_file")
-            mime_type = file_metadata.get("mimeType", "")
-
-            # Verify file is a PDF
-            if mime_type != "application/pdf":
-                raise HTTPException(
-                    status_code=400, detail=f"File is not a PDF: {mime_type}"
-                )
-
-            # Download file
-            request = drive_service.files().get_media(fileId=file_id)
-            fh = io.BytesIO()
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-
-            # Save PDF to disk
-            Path(output_dir).mkdir(exist_ok=True)
-            temp_file_path = Path(output_dir) / file_name
-
-            with open(temp_file_path, "wb") as f:
-                f.write(fh.getvalue())
-
-            if not temp_file_path.exists():
-                raise HTTPException(
-                    status_code=404, detail="File not found after download"
-                )
-
-            return {
-                "file_id": file_id,
-                "file_name": file_name,
-                "mime_type": mime_type,
-                "path_file": temp_file_path,
-            }
-
-        except HttpError as e:
-            status_code = e.resp.status
-            if status_code == 404:
-                logger.error(f"File not found: {file_id}")
-                return {"error": f"File not found: {file_id}"}
-            elif status_code == 403:
-                logger.error(f"Access denied: {str(e)}")
-                return {"error": f"Access denied: {str(e)}"}
-            logger.error(f"Google API error: {str(e)}")
-            return {"error": f"Google API error: {str(e)}"}
-        except HTTPException as e:
-            logger.error(f"HTTP error: {e.status_code} - {e.detail}")
-            return {"error": f"HTTP error: {e.status_code} - {e.detail}"}
-        except Exception as e:
-            logger.error(f"Error: {str(e)}")
-
     def load_and_split(self, file_path: str):
         try:
             super().__init__(file_path=file_path)
@@ -143,7 +66,52 @@ class DocProcessing(DoclingLoader):
                 return self.embedder.embed_query(texts)
         except Exception as e:
             logger.error(f"Error encoding texts: {str(e)}")
-            raise HTTPException(status_code=400, detail=f"Error encoding texts: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Error encoding texts: {str(e)}"
+            )
+
+    def load_data(self, file_path: str) -> None:
+        """chunk -> embedding -> insert -> next chunk Cycle"""
+        try:
+            # Validate file path
+            if not Path(file_path).exists():
+                raise ValueError(f"File not found: {file_path}")
+
+            with psycopg.connect(PSYCOPG_CONNECT) as conn:
+                register_vector(conn)
+                with conn.cursor() as cur:
+
+                    # Load chunks (generator)
+                    collect_chunks = self.load_and_split(file_path=file_path)
+                    chunk_count = 0
+
+                    with cur.copy(
+                        "COPY item (content, embedding) FROM STDIN WITH (FORMAT BINARY)"
+                    ) as copy:
+                        copy.set_types(["text", "vector"])
+
+                        for i, chunks in enumerate(collect_chunks):
+                            # Process each chunk in the list
+                            for sub_chunk in chunks:
+                                vector = self.encode(texts=sub_chunk)
+                                if not isinstance(vector, list):
+                                    vector = vector.tolist()  # Convert numpy if needed
+                                copy.write_row([sub_chunk, vector])
+                                chunk_count += 1
+
+                    logger.info(
+                        f"Loaded and inserted {chunk_count} chunks from {file_path}"
+                    )
+
+        except psycopg.ProgrammingError as e:
+            logger.error(f"Database programming error during bulk load: {e}")
+            raise
+        except psycopg.Error as e:
+            logger.error(f"Database error during bulk load: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during bulk load: {e}")
+            raise
 
 
 if __name__ == "__main__":
@@ -151,9 +119,5 @@ if __name__ == "__main__":
     from pathlib import Path
 
     base_dir = Path(__file__).resolve().parent.parent
-    file_path = base_dir.parent/"document/data.pdf"
-    collect_chunks = document_processing_service.load_and_split(file_path)
-    for chunks in collect_chunks:
-        for i, chunk in enumerate(chunks):
-            vector = document_processing_service.encode(chunk)
-            print(f"Chunk {i+1} embedding (first 5 values): {vector[:5]}")
+    file_path = base_dir.parent / "document/data.pdf"
+    document_processing_service.load_data(file_path)

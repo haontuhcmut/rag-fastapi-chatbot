@@ -7,6 +7,7 @@ ENV_PATH = BASE_DIR.parent / ".env"
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    PSYCOPG_CONNECT: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str

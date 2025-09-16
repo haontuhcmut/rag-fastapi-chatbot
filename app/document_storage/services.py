@@ -5,7 +5,9 @@ from google.auth.transport.requests import Request
 from fastapi import HTTPException
 from pathlib import Path
 import logging
-
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload
+import io
 from app.config import Config
 
 # Configure logging
@@ -84,3 +86,73 @@ class GoogleDriveService:
         except Exception as e:
             logger.error(f"Authentication failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Authentication failed: {str(e)}")
+
+    def download_and_save(self, file_id: str, output_dir: str = "temp_files"):
+        """Download a PDF from Google Drive by file_id and save file in local"""
+        try:
+            credentials = self.load_credentials()
+            if not credentials or not credentials.valid:
+                logger.warning("Invalid credentials, re-authentication required")
+                raise HTTPException(
+                    status_code=401,
+                    detail="Could not validate credentials. Please authenticate via /drive/auth",
+                )
+            drive_service = self.get_drive_service(credentials)
+
+            # Get file metadata
+            file_metadata = (
+                drive_service.files()
+                .get(fileId=file_id, fields="name, mimeType")
+                .execute()
+            )
+            file_name = file_metadata.get("name", "downloaded_file")
+            mime_type = file_metadata.get("mimeType", "")
+
+            # Verify file is a PDF
+            if mime_type != "application/pdf":
+                raise HTTPException(
+                    status_code=400, detail=f"File is not a PDF: {mime_type}"
+                )
+
+            # Download file
+            request = drive_service.files().get_media(fileId=file_id)
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+
+            # Save PDF to disk
+            Path(output_dir).mkdir(exist_ok=True)
+            temp_file_path = Path(output_dir) / file_name
+
+            with open(temp_file_path, "wb") as f:
+                f.write(fh.getvalue())
+
+            if not temp_file_path.exists():
+                raise HTTPException(
+                    status_code=404, detail="File not found after download"
+                )
+
+            return {
+                "file_id": file_id,
+                "file_name": file_name,
+                "mime_type": mime_type,
+                "path_file": temp_file_path,
+            }
+
+        except HttpError as e:
+            status_code = e.resp.status
+            if status_code == 404:
+                logger.error(f"File not found: {file_id}")
+                return {"error": f"File not found: {file_id}"}
+            elif status_code == 403:
+                logger.error(f"Access denied: {str(e)}")
+                return {"error": f"Access denied: {str(e)}"}
+            logger.error(f"Google API error: {str(e)}")
+            return {"error": f"Google API error: {str(e)}"}
+        except HTTPException as e:
+            logger.error(f"HTTP error: {e.status_code} - {e.detail}")
+            return {"error": f"HTTP error: {e.status_code} - {e.detail}"}
+        except Exception as e:
+            logger.error(f"Error: {str(e)}")
