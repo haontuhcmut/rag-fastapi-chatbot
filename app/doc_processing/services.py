@@ -8,8 +8,6 @@ from app.config import Config
 from typing import Optional, Dict, Any
 import psycopg
 from pgvector.psycopg import register_vector
-import numpy as np
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 EMBEDDING_MODEL = Config.EMBEDDING_MODEL
 PSYCOPG_CONNECT = Config.PSYCOPG_CONNECT
+
 
 class DocProcessing(DoclingLoader):
     """Class to split token from file, chunk it."""
@@ -36,7 +35,7 @@ class DocProcessing(DoclingLoader):
             encode_kwargs = {"normalize_embeddings": True}
 
         # Initialize tokenizer and embedder
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
+        self.tokenizer = AutoTokenizer.from_pretrained(model, use_fast=True)
         self.embedder = HuggingFaceEmbeddings(
             model_name=model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
         )
@@ -73,17 +72,38 @@ class DocProcessing(DoclingLoader):
             )
 
     def load_data(self, file_path: str) -> None:
-        """chunk -> embedding -> insert -> next chunk Cycle"""
+        """Loads a file, splits it into chunks, generates embeddings, and inserts them into a PostgreSQL database.
+
+        Flow:
+        1. Validates the input file path.
+        2. Connects to PostgreSQL and registers the pgvector extension.
+        3. Splits the file into chunks using a autotoken splitter.
+        4. Cleans chunks to remove unnecessary characters.
+        5. Generates embeddings for all chunks in a single batch.
+        6. Optionally converts embeddings to NumPy arrays for processing.
+        7. Inserts chunks and embeddings into the database using binary COPY.
+        8. Logs the number of chunks processed and handles errors.
+
+        Args:
+            file_path (str): Path to the input text file.
+
+        Raises:
+            ValueError: If the file does not exist.
+            psycopg.ProgrammingError: For database programming errors.
+            psycopg.Error: For general database errors.
+            Exception: For unexpected errors.
+        """
         try:
+            from pathlib import Path
+
             # Validate file path
             if not Path(file_path).exists():
                 raise ValueError(f"File not found: {file_path}")
 
-            with psycopg.connect(PSYCOPG_CONNECT) as conn:
+            with psycopg.connect(PSYCOPG_CONNECT, autocommit=True) as conn:
                 register_vector(conn)
                 with conn.cursor() as cur:
-
-                    # Load chunks (generator)
+                    # Load and split chunks (generator)
                     collect_chunks = self.load_and_split(file_path=file_path)
                     chunk_count = 0
 
@@ -92,14 +112,27 @@ class DocProcessing(DoclingLoader):
                     ) as copy:
                         copy.set_types(["text", "vector"])
 
-                        for i, chunks in enumerate(collect_chunks):
-                            # Process each chunk in the list
-                            for sub_chunk in chunks:
-                                vector = self.encode(texts=sub_chunk)
-                                if isinstance(vector, np.array):
-                                    vector = vector.tolist()  # Convert numpy if needed
-                                copy.write_row([sub_chunk, vector])
-                                chunk_count += 1
+                        # Flatten and preprocess chunks
+                        all_chunks = [
+                            self._clean_text(sub_chunk)
+                            for chunks in collect_chunks
+                            for sub_chunk in chunks
+                            if sub_chunk.strip()
+                        ]
+
+                        # Batch encode
+                        vectors = self.encode(texts=all_chunks)  # List of lists
+                        # Convert to NumPy array
+                        vectors_np = np.array(
+                            vectors, dtype=np.float32
+                        )  # Shape: (num_chunks, embedding_dim)
+
+                        # Write to database
+                        for sub_chunk, vector in zip(all_chunks, vectors_np):
+                            copy.write_row(
+                                [sub_chunk, vector.tolist()]
+                            )  # Convert back to list for pgvector
+                            chunk_count += 1
 
                     logger.info(
                         f"Loaded and inserted {chunk_count} chunks from {file_path}"
@@ -115,11 +148,50 @@ class DocProcessing(DoclingLoader):
             logger.error(f"Unexpected error during bulk load: {e}")
             raise
 
+    def _clean_text(self, text: str) -> str:
+        """Clean input text to reduce processing load."""
+        import re
+
+        text = re.sub(r"\s+", " ", text)  # Normalize whitespace
+        # text = re.sub(r"[^\w\s]", "", text)  # Remove special characters (if needed)
+        return text.strip()
+
 
 if __name__ == "__main__":
     document_processing_service = DocProcessing()
-    from pathlib import Path
 
-    base_dir = Path(__file__).resolve().parent.parent
-    file_path = base_dir.parent / "document/data.pdf"
-    document_processing_service.load_data(file_path)
+    # from pathlib import Path
+    #
+    # base_dir = Path(__file__).resolve().parent.parent
+    # file_path = base_dir.parent / "document/data.pdf"
+    # document_processing_service.load_data(file_path)
+
+    # ---------------------SEARCH------------------------------
+    text = "tôi muốn tham gia thử nghiệm thành thạo thì làm như thế nào"
+    embedding = document_processing_service.encode(texts=text)
+    embedding_np = np.array(embedding, dtype=np.float32)  # Convert to NumPy array
+
+    conn = psycopg.connect(PSYCOPG_CONNECT, autocommit=True)
+    register_vector(conn)
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+            BEGIN;
+            SET LOCAL hnsw.ef_search = 100;
+            COMMIT;
+        """
+    )
+
+    cur.execute(
+        "SELECT * FROM items ORDER BY embedding <-> %s LIMIT 3",
+        (embedding_np,),
+    )
+
+    results = cur.fetchall()
+
+    context = "\n\n".join([row[0] for row in results])
+
+    print(context)
+
