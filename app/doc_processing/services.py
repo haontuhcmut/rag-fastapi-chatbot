@@ -8,6 +8,8 @@ from app.config import Config
 from typing import Optional, Dict, Any
 import psycopg
 from pgvector.psycopg import register_vector
+import numpy as np
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -94,7 +96,7 @@ class DocProcessing(DoclingLoader):
                             # Process each chunk in the list
                             for sub_chunk in chunks:
                                 vector = self.encode(texts=sub_chunk)
-                                if not isinstance(vector, list):
+                                if isinstance(vector, np.array):
                                     vector = vector.tolist()  # Convert numpy if needed
                                 copy.write_row([sub_chunk, vector])
                                 chunk_count += 1
