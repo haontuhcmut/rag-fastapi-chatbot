@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/db_vector/session.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/db_vector/session.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/doc_processing/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/doc_processing/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/document_storage/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/document_storage/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/vector_embedding/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/vector_embedding/services.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
