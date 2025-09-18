@@ -10,6 +10,9 @@ import psycopg
 from pgvector.psycopg import register_vector
 import numpy as np
 
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
+
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,9 +71,7 @@ class DocProcessing(DoclingLoader):
                 return self.embedder.embed_query(texts)
         except Exception as e:
             logger.error(f"Error encoding texts: {str(e)}")
-            raise HTTPException(
-                status_code=400, detail=f"Error encoding texts: {str(e)}"
-            )
+
 
     def load_data(self, file_path: str) -> None:
         """Loads a file, splits it into chunks, generates embeddings, and inserts them into a PostgreSQL database.
@@ -158,7 +159,11 @@ class DocProcessing(DoclingLoader):
         return text.strip()
 
 
+
+
+
 if __name__ == "__main__":
+
     document_processing_service = DocProcessing()
 
     # from pathlib import Path
@@ -170,7 +175,7 @@ if __name__ == "__main__":
     # ---------------------SEARCH------------------------------
     text = "tôi muốn tham gia thử nghiệm thành thạo thì làm như thế nào"
     embedding = document_processing_service.encode(texts=text)
-    embedding_np = np.array(embedding, dtype=np.float32)  # Convert to NumPy array
+    embedding_query = np.array(embedding, dtype=np.float32)  # Convert to NumPy array
 
     conn = psycopg.connect(PSYCOPG_CONNECT, autocommit=True)
     register_vector(conn)
@@ -180,19 +185,27 @@ if __name__ == "__main__":
     cur.execute(
         """
             BEGIN;
-            SET LOCAL hnsw.ef_search = 40;
+            SET LOCAL hnsw.ef_search = 100;
             COMMIT;
         """
     )
 
     cur.execute(
-        "SELECT * FROM item ORDER BY embedding <-> %s LIMIT 3",
-        (embedding_np,),
+        "SELECT * FROM item ORDER BY embedding <-> %s LIMIT 20",
+        (embedding_query,),
     )
 
     results = cur.fetchall()
 
-    context = "\n\n".join([row[1] for row in results])
+    embeddings = [np.array(row[2], dtype=float) for row in results]
 
+    embedding_list = np.vstack(embeddings)
+
+    indices = maximal_marginal_relevance(
+        embedding_query, embedding_list, k=3, lambda_mult=0.7
+    )
+    final_docs = [results[i] for i in indices]
+    content = [doc[1] for doc in final_docs]
+    context = "\n".join(content)
     print(context)
 
