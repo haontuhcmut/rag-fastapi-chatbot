@@ -11,6 +11,10 @@ PSYCOPG_CONNECT = Config.PSYCOPG_CONNECT
 
 
 class SearchService(DocProcessing):
+    def __init__(self, db: str, vector_table: str):
+        super().__init__()
+        self.db = db
+        self.vector_table = vector_table
 
     def search(
         self,
@@ -24,7 +28,7 @@ class SearchService(DocProcessing):
             query_embedding = np.array(
                 embedding, dtype=np.float32
             )  # Convert to Numpy array
-            with psycopg.connect(PSYCOPG_CONNECT, autocommit=True) as conn:
+            with psycopg.connect(self.db, autocommit=True) as conn:
                 register_vector(conn)
                 cur = conn.cursor()
 
@@ -37,7 +41,7 @@ class SearchService(DocProcessing):
                 )
 
                 cur.execute(
-                    f"SELECT * FROM item ORDER BY embedding {distance_function} %s LIMIT {top_k}",
+                    f"SELECT * FROM {self.vector_table} ORDER BY embedding {distance_function} %s LIMIT {top_k}",
                     (query_embedding,),
                 )
                 results = cur.fetchall()
@@ -61,7 +65,7 @@ class SearchService(DocProcessing):
         query_embedding = np.array(embedding, dtype=np.float32)
 
         results = self.search(
-            query=text,
+            query=query,
             hnsw_ef_search=hnsw_ef_search,
             top_k=fetch_k,
             distance_function=distance_function,
@@ -83,8 +87,14 @@ class SearchService(DocProcessing):
 
 
 if __name__ == "__main__":
-    search_service = SearchService()
+    search_service = SearchService(db=PSYCOPG_CONNECT, vector_table="item")
     text = "giới thiệu về trung tâm 3"
 
-    results = search_service.mmr_search(query=text)
-    print(results)
+    results_1 = search_service.search(text)
+    content_1 = [row[1] for row in results_1]
+    print("This is result 1:")
+    print("\n".join(content_1))
+
+    results_2 = search_service.mmr_search(query=text)
+    print("This is result 2:")
+    print(results_2)
