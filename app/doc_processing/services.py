@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 import logging
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,8 +8,7 @@ from typing import Optional, Dict, Any
 import psycopg
 from pgvector.psycopg import register_vector
 import numpy as np
-
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from pathlib import Path
 
 
 # Configure logging
@@ -39,7 +37,11 @@ class DocProcessing(DoclingLoader):
             encode_kwargs = {"normalize_embeddings": True}
 
         # Initialize tokenizer and embedder
-        self.tokenizer = AutoTokenizer.from_pretrained(model, use_fast=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model,
+            use_fast=True,
+            local_files_only=True,  # Loading and manage your cache by huggingface cli (recommendation)
+        )
         self.embedder = HuggingFaceEmbeddings(
             model_name=model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
         )
@@ -71,7 +73,6 @@ class DocProcessing(DoclingLoader):
                 return self.embedder.embed_query(texts)
         except Exception as e:
             logger.error(f"Error encoding texts: {str(e)}")
-
 
     def load_data(self, file_path: str) -> None:
         """Loads a file, splits it into chunks, generates embeddings, and inserts them into a PostgreSQL database.
@@ -159,52 +160,47 @@ class DocProcessing(DoclingLoader):
         return text.strip()
 
 
-
-
-
 if __name__ == "__main__":
 
     document_processing_service = DocProcessing()
 
-    # from pathlib import Path
+    base_dir = Path(__file__).resolve().parent.parent
+    file_path = base_dir.parent / "document/data.pdf"
+    document_processing_service.load_data(file_path)
+
+    # # ---------------------SEARCH------------------------------
+    # text = "tôi muốn tham gia thử nghiệm thành thạo thì làm như thế nào"
+    # embedding = document_processing_service.encode(texts=text)
+    # embedding_query = np.array(embedding, dtype=np.float32)  # Convert to NumPy array
     #
-    # base_dir = Path(__file__).resolve().parent.parent
-    # file_path = base_dir.parent / "document/data.pdf"
-    # document_processing_service.load_data(file_path)
-
-    # ---------------------SEARCH------------------------------
-    text = "tôi muốn tham gia thử nghiệm thành thạo thì làm như thế nào"
-    embedding = document_processing_service.encode(texts=text)
-    embedding_query = np.array(embedding, dtype=np.float32)  # Convert to NumPy array
-
-    conn = psycopg.connect(PSYCOPG_CONNECT, autocommit=True)
-    register_vector(conn)
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-            BEGIN;
-            SET LOCAL hnsw.ef_search = 100;
-            COMMIT;
-        """
-    )
-
-    cur.execute(
-        "SELECT * FROM item ORDER BY embedding <-> %s LIMIT 20",
-        (embedding_query,),
-    )
-
-    results = cur.fetchall()
-
-    embeddings = [np.array(row[2], dtype=float) for row in results]
-
-    embedding_list = np.vstack(embeddings)
-
-    indices = maximal_marginal_relevance(
-        embedding_query, embedding_list, k=3, lambda_mult=0.7
-    )
-    final_docs = [results[i] for i in indices]
-    content = [doc[1] for doc in final_docs]
-    context = "\n".join(content)
-    print(context)
+    # conn = psycopg.connect(PSYCOPG_CONNECT, autocommit=True)
+    # register_vector(conn)
+    #
+    # cur = conn.cursor()
+    #
+    # cur.execute(
+    #     """
+    #         BEGIN;
+    #         SET LOCAL hnsw.ef_search = 100;
+    #         COMMIT;
+    #     """
+    # )
+    #
+    # cur.execute(
+    #     "SELECT * FROM item ORDER BY embedding <-> %s LIMIT 20",
+    #     (embedding_query,),
+    # )
+    #
+    # results = cur.fetchall()
+    #
+    # embeddings = [np.array(row[2], dtype=float) for row in results]
+    #
+    # embedding_list = np.vstack(embeddings)
+    #
+    # indices = maximal_marginal_relevance(
+    #     embedding_query, embedding_list, k=3, lambda_mult=0.7
+    # )
+    # final_docs = [results[i] for i in indices]
+    # content = [doc[1] for doc in final_docs]
+    # context = "\n".join(content)
+    # print(context)
