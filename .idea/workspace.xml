@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="b377b5e4-6e40-46de-b913-c5b40f7e0926" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/doc_processing/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/doc_processing/services.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,30 +42,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.chunks.executor&quot;: &quot;Run&quot;,
-    &quot;Python.db.executor&quot;: &quot;Run&quot;,
-    &quot;Python.evaluate_embedding.executor&quot;: &quot;Run&quot;,
-    &quot;Python.llm_model.executor&quot;: &quot;Run&quot;,
-    &quot;Python.metric.executor&quot;: &quot;Run&quot;,
-    &quot;Python.pdf_collection.executor&quot;: &quot;Run&quot;,
-    &quot;Python.search_embedding.executor&quot;: &quot;Run&quot;,
-    &quot;Python.sentence_embeddings.executor&quot;: &quot;Run&quot;,
-    &quot;Python.services.executor&quot;: &quot;Run&quot;,
-    &quot;Python.store_embedding.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.vector_store.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/haonguyen/Desktop/chatbot/document&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.black.configuration.BlackFormatterConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.chunks.executor": "Run",
+    "Python.db.executor": "Run",
+    "Python.evaluate_embedding.executor": "Run",
+    "Python.llm_model.executor": "Run",
+    "Python.metric.executor": "Run",
+    "Python.pdf_collection.executor": "Run",
+    "Python.prompt_template.executor": "Run",
+    "Python.search_embedding.executor": "Run",
+    "Python.sentence_embeddings.executor": "Run",
+    "Python.services.executor": "Run",
+    "Python.store_embedding.executor": "Run",
+    "Python.test.executor": "Run",
+    "Python.vector_store.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/haonguyen/Desktop/chatbot/document",
+    "settings.editor.selected.configurable": "com.jetbrains.python.black.configuration.BlackFormatterConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/document" />
@@ -111,7 +111,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758119808275</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003">
+      <option name="closed" value="true" />
+      <created>1758205373936</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1758205373936</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
 </project>
