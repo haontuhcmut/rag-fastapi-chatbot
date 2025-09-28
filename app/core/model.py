@@ -43,18 +43,26 @@ class User(SQLModel, table=True):
     hashed_password: str = Field(default=None, exclude=True)  # Do not response
     is_verified: bool = Field(default=False)
     role: str = Field(default="user", max_length=32, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
     updated_at: datetime = Field(
-        sa_column=Column(DateTime, default=func.now(), onupdate=func.now())
+        sa_column=Column(
+            DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        )
     )
     chat: list["Chat"] = Relationship(back_populates="user")
 
 class Chat(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
     updated_at: datetime = Field(
-        sa_column=Column(DateTime, default=func.now(), onupdate=func.now())
+        sa_column=Column(
+            DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        )
     )
     user: User | None = Relationship(back_populates="chat")
     messages: list["Message"] = Relationship(back_populates="chat", cascade_delete=True)
