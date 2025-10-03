@@ -1,4 +1,6 @@
 import logging
+
+from sympy import preview
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_docling import DoclingLoader
@@ -43,7 +45,9 @@ class DocProcessing(DoclingLoader):
             local_files_only=True,  # Loading and manage your cache by huggingface cli (recommendation)
         )
         self.embedder = HuggingFaceEmbeddings(
-            model_name=model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs,
+            model_name=model,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
         )
 
         # Initialize text splitter
@@ -56,10 +60,12 @@ class DocProcessing(DoclingLoader):
     def load_and_split(self, file_path: str):
         try:
             super().__init__(file_path=file_path)
-            doc_iter = self.lazy_load()
-            for doc in doc_iter:
-                chunks = self.text_splitter.split_text(doc.page_content)
-                yield chunks
+
+            for doc in self.lazy_load():  # Load each document chunk
+                for chunk in self.text_splitter.split_text(
+                    doc.page_content
+                ):  # Chunk for each document chunk
+                    yield chunk # This is list [str] type response
         except Exception as e:
             logger.error(f"Error processing document: {str(e)}")
             raise
@@ -78,8 +84,6 @@ class DocProcessing(DoclingLoader):
         """Loads a file, splits it into chunks, generates embeddings, and inserts them into a PostgreSQL database."""
 
         try:
-            from pathlib import Path
-
             # Validate file path
             if not Path(file_path).exists():
                 raise ValueError(f"File not found: {file_path}")
@@ -92,16 +96,15 @@ class DocProcessing(DoclingLoader):
                     chunk_count = 0
 
                     with cur.copy(
-                        "COPY embedding (content, embedding) FROM STDIN WITH (FORMAT BINARY)"
+                        "COPY embedding (content, embedding) FROM STDIN WITH (FORMAT BINARY)"  # Notice table and field
                     ) as copy:
                         copy.set_types(["text", "vector"])
 
                         # Flatten and preprocess chunks
                         all_chunks = [
-                            self._clean_text(sub_chunk)
-                            for chunks in collect_chunks
-                            for sub_chunk in chunks
-                            if sub_chunk.strip()
+                            self._clean_text(chunk)  # if you need
+                            for chunk in collect_chunks
+                            if chunk.strip()
                         ]
 
                         # Batch encode
@@ -112,9 +115,9 @@ class DocProcessing(DoclingLoader):
                         )  # Shape: (num_chunks, embedding_dim)
 
                         # Write to database
-                        for sub_chunk, vector in zip(all_chunks, vectors_np):
+                        for chunk, vector in zip(all_chunks, vectors_np):
                             copy.write_row(
-                                [sub_chunk, vector.tolist()]
+                                [chunk, vector.tolist()]
                             )  # Convert back to list for pgvector
                             chunk_count += 1
 
@@ -143,8 +146,22 @@ class DocProcessing(DoclingLoader):
 
 if __name__ == "__main__":
 
-    document_processing_service = DocProcessing(model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50)
+    document_processing_service = DocProcessing(
+        model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50
+    )
 
-    base_dir = Path(__file__).resolve().parent.parent
-    file_path = base_dir.parent / "document/data.pdf"
-    document_processing_service.load_data(file_path)
+    # base_dir = Path(__file__).resolve().parent.parent
+    # file_path = base_dir.parent / "document/data.pdf"
+    # document_processing_service.load_data(file_name)
+
+    from pydantic import BaseModel
+
+    class Chunk(BaseModel):
+        content: str
+
+    collect_chunks = document_processing_service.load_and_split(
+        "/var/folders/6t/v83d99117854dgl8q81766tr0000gn/T/tmplsqye9eq.pdf"
+    )
+
+    all_chunks = [Chunk(content=chunk) for chunk in collect_chunks]
+    print(all_chunks)
