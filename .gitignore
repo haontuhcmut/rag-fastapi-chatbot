@@ -1,5 +1,4 @@
 .env
-document
 .venv
 .idea/
 credentials.json
