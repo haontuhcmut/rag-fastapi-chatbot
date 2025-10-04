@@ -28,7 +28,7 @@ class KnownledgeBaseService:
 
     async def update_knowledge_base(self, kb_id: str, data_update: CreateKnowledgeBase, session: AsyncSession):
         kb_item = await self.get_knowledge_base(kb_id, session)
-        for key, value in data_update.items():
+        for key, value in data_update.model_dump().items():
             setattr(kb_item, key, value)
         await session.commit()
         return kb_item

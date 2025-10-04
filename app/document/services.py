@@ -1,20 +1,55 @@
 import logging
 import tempfile
 import hashlib
+from fastapi import UploadFile, HTTPException
 
-from fastapi import UploadFile
-from app.document.schema import UploadResponse, ChunkResponse
+from app.document.schema import (
+    DocumentDBResponse,
+    CreateDocumentDB,
+    UpdateDocumentDB,
+    ChunkPreviewResponse,
+)
 from app.core.minio import get_minio_client, init_minio
 from app.config import Config
 from pathlib import Path
 from io import BytesIO
 from app.doc_processing.services import DocProcessing
+from sqlmodel.ext.asyncio.session import AsyncSession
+from app.core.model import Document
+from uuid import UUID
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlmodel import apaginate
+from sqlmodel import desc, select, insert
 
-document_processing_service = DocProcessing(model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50)
 
+logger = logging.getLogger(__name__)
+
+document_processing_service = DocProcessing(
+    model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50
+)
 
 class DocumentService:
-    async def upload_document(self, file: UploadFile) -> UploadResponse:
+    async def get_all_document(self, session: AsyncSession) -> Page[DocumentDBResponse]:
+        statement = select(Document).order_by(desc(Document.created_at))
+        return await apaginate(session, statement)
+
+    async def get_document(self, document_id: str, session: AsyncSession) -> DocumentDBResponse:
+        doc = await session.get(Document, UUID(document_id))
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        else:
+            return doc
+
+    async def update_document(self, doc_id: str, data_update: UpdateDocumentDB, session: AsyncSession) -> DocumentDBResponse:
+        doc = await self.get_document(doc_id, session)
+        for key, value in data_update.model_dump().items():
+            setattr(doc, key, value)
+        await session.commit()
+        return doc
+
+    async def upload_document(
+        self, file: UploadFile, kb_id: str, user_id: str, session: AsyncSession
+    ):
         """Step 1: Upload document to MinIO"""
         content = await file.read()
         file_size = len(content)
@@ -25,18 +60,19 @@ class DocumentService:
         file_name = "".join(
             c for c in file.filename if c.isalnum() or c in ("-", "_", ".")
         ).strip()
-        object_path = f"tmp/{file_name}"
+        path = Path(file_name)
+        stem = path.stem
+        ext = path.suffix.lower()
+        object_path = f"tmp/{stem}_{file_hash}{ext}"
 
         content_types = {
             ".pdf": "application/pdf",
-            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", #word file
             ".md": "text/markdown",
             ".txt": "text/plain",
         }
 
-        file_path = Path(file_name)
-        ext = file_path.suffix
-        content_type = content_types.get(ext.lower(), "application/octet-stream")
+        content_type = content_types.get(ext, "application/octet-stream")
 
         # Upload to MinIO
         _minio_client = init_minio()
@@ -53,21 +89,29 @@ class DocumentService:
             logging.error(f"Failed to upload file in MinIO: {str(e)}")
             raise
 
-        return UploadResponse(
+        new_doc_base = CreateDocumentDB(
             object_path=object_path,
             file_name=file_name,
             file_size=file_size,
             content_type=content_type,
             file_hash=file_hash,
+            user_id=UUID(user_id),
+            knowledge_base_id=UUID(kb_id),
         )
 
-    async def preview_document(self, object_path: str):
-        """Step 2: Generate preview chunks"""
+        doc_dict = new_doc_base.model_dump()
+        new_doc = Document(**doc_dict)
+        session.add(new_doc)
+        await session.commit()
+        return new_doc
+
+    async def download_doc_to_tmp_local(self, object_path: str) -> str:
+        """Download document from MinIO"""
         minio_client = get_minio_client()
         file_path = Path(object_path)
         ext = file_path.suffix.lower()
 
-        #Download to temp file
+        # Download to temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
             minio_client.fget_object(
                 bucket_name=Config.BUCKET_NAME,
@@ -75,10 +119,32 @@ class DocumentService:
                 file_path=temp_file.name,
             )
             temp_path = temp_file.name
+        return temp_path
+
+    async def preview_document(self, document_id: str, session: AsyncSession):
+        """Generate preview chunks"""
         try:
             # Load and split the document
+            doc = await self.get_document(document_id, session=session)
+            temp_path = await self.download_doc_to_tmp_local(doc.object_path)
             all_chunks = document_processing_service.load_and_split(file_path=temp_path)
-            return list(ChunkResponse(content=chunk) for chunk in all_chunks)
+            return list(ChunkPreviewResponse(content=chunk) for chunk in all_chunks)
         finally:
             Path(temp_path).unlink()
 
+    async def document_chunking(self, document_id: str, session: AsyncSession):
+        """Generate embedding chunks"""
+        try:
+            doc = await self.get_document(document_id, session=session)
+            temp_path = await self.download_doc_to_tmp_local(doc.object_path)
+            all_chunks = document_processing_service.load_and_split(file_path=temp_path)
+            values = [
+                {"document_id": doc.id, "content": chunk} for chunk in all_chunks
+            ]
+            statement = insert(Document).values(values=values)
+            await session.exec(statement)
+            await session.commit()
+            logging.info(f"Document chunking done: {doc.id}")
+            return HTTPException(status_code=201, detail="Document chunking done")
+        finally:
+            Path(temp_path).unlink()
