@@ -21,8 +21,9 @@ class Embedding(SQLModel, table=True):
     CREATE INDEX embedding_idx ON item USING hnsw (embedding vector_l2_ops);
     """
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    chunks_id: UUID = Field(default=None, index=True, foreign_key="chunk.id")
-    embedding: Any | None = Field(sa_column=sa.Column(Vector(768)))
+    user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
+    chunk_id: UUID = Field(default=None, index=True, foreign_key="chunk.id", nullable=False)
+    vector: Any | None = Field(sa_column=sa.Column(Vector(768)))
     document_id: UUID = Field(default=None, foreign_key="document.id", nullable=False)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
@@ -34,15 +35,16 @@ class Embedding(SQLModel, table=True):
     )
 
     chunk: Optional["Chunk"] = Relationship(back_populates="embedding")
+    user: Optional["User"] = Relationship(back_populates="embedding")
 
 
 # Create index for embedding table
 index = Index(
     'sqlmodel_index',
-    Embedding.embedding,
+    Embedding.vector,
     postgresql_using='hnsw', # HNSW index
     postgresql_with={'m': 16, 'ef_construction': 64}, # this is default
-    postgresql_ops={'embedding': 'vector_l2_ops'} # ector_ip_ops, vector_cosine_ops, vector_l1_ops, etc.
+    postgresql_ops={'vector': 'vector_l2_ops'} # ector_ip_ops, vector_cosine_ops, vector_l1_ops, etc.
 )
 
 
@@ -64,10 +66,11 @@ class User(SQLModel, table=True):
         )
     )
 
-    chat: list["Chat"] = Relationship(back_populates="user")
+    chats: list["Chat"] = Relationship(back_populates="user")
     documents: list["Document"] = Relationship(back_populates="user")
     chunks: list["Chunk"] = Relationship(back_populates="user")
     knowledge_base: list["KnowledgeBase"] = Relationship(back_populates="user")
+    embedding: list["Embedding"] = Relationship(back_populates="user")
 
 
 class KnowledgeBase(SQLModel, table=True):
@@ -118,7 +121,6 @@ class Chunk(SQLModel, table=True):
     user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
     document_id: UUID = Field(default=None, foreign_key="document.id", nullable=False)
     content: str = Field(default=None, max_length=1024)
-    status: str = Field(default="pending", nullable=False)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -144,7 +146,7 @@ class Chat(SQLModel, table=True):
             DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
         )
     )
-    user: User | None = Relationship(back_populates="chat")
+    user: User | None = Relationship(back_populates="chats")
     messages: list["Message"] = Relationship(back_populates="chat", cascade_delete=True)
 
 class Message(SQLModel, table=True):

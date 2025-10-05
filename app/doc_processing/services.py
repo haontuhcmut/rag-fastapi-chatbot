@@ -9,6 +9,7 @@ import psycopg
 from pgvector.psycopg import register_vector
 import numpy as np
 from pathlib import Path
+from uuid import UUID
 
 
 # Configure logging
@@ -63,7 +64,7 @@ class DocProcessing(DoclingLoader):
                 for chunk in self.text_splitter.split_text(
                     doc.page_content
                 ):  # Chunk for each document chunk
-                    yield chunk # This is list [str] type response
+                    yield chunk  # This is list [str] type response
         except Exception as e:
             logger.error(f"Error processing document: {str(e)}")
             raise
@@ -79,7 +80,7 @@ class DocProcessing(DoclingLoader):
             logger.error(f"Error encoding texts: {str(e)}")
 
     def load_data(self, file_path: str) -> None:
-        """Loads a file, splits it into chunks, generates embeddings, and inserts them into a PostgreSQL database."""
+        """Embedding flow from document path. Notice Embedding table with content field and embedding are required"""
 
         try:
             # Validate file path
@@ -94,7 +95,7 @@ class DocProcessing(DoclingLoader):
                     chunk_count = 0
 
                     with cur.copy(
-                        "COPY embedding (content, embedding) FROM STDIN WITH (FORMAT BINARY)"  # Notice table and field
+                        "COPY embedding (content, vector) FROM STDIN WITH (FORMAT BINARY)"  # Notice table and field
                     ) as copy:
                         copy.set_types(["text", "vector"])
 
@@ -133,6 +134,36 @@ class DocProcessing(DoclingLoader):
             logger.error(f"Unexpected error during bulk load: {e}")
             raise
 
+    def embedding_from_list_chunks_text(self, content: list, document_id: str):
+        with psycopg.connect(PSYCOPG_CONNECT, autocommit=True) as conn:
+            register_vector(conn)
+            with conn.cursor() as cur:
+                chunk_count = 0
+                with cur.copy(
+                    "COPY embedding (document_id, chunk_id, embedding) "
+                    "FROM STDIN WITH (FORMAT BINARY)"  # Uses 'embedding' table in DB (adjust column order if needed)
+                ) as copy:
+                    copy.set_types(["uuid", "uuid" "vector"])
+
+
+
+                    # Batch encode
+                    vectors = self.encode(texts=all_chunks)  # List of lists
+                    # Convert to NumPy array
+                    vectors_np = np.array(
+                        vectors, dtype=np.float32
+                    )  # Shape: (num_chunks, embedding_dim)
+
+                    # Write to database (fixed zip: repeat document_id for each chunk)
+                    for doc_id, chunk, vector in zip(
+                        [UUID(document_id)] * len(all_chunks), all_chunks, vectors_np
+                    ):
+                        copy.write_row(
+                            [doc_id, chunk, vector.tolist()]
+                        )  # Convert back to list for pgvector
+                        chunk_count += 1
+            logger.info(f"Inserted {chunk_count} chunks from {document_id}")
+
     def _clean_text(self, text: str) -> str:
         """Clean input text to reduce processing load."""
         import re
@@ -144,22 +175,22 @@ class DocProcessing(DoclingLoader):
 
 # if __name__ == "__main__":
 
-    # document_processing_service = DocProcessing(
-    #     model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50
-    # )
+# document_processing_service = DocProcessing(
+#     model="google/embeddinggemma-300M", chunk_size=512, chunk_overlap=50
+# )
 
-    # base_dir = Path(__file__).resolve().parent.parent
-    # file_path = base_dir.parent / "document/data.pdf"
-    # document_processing_service.load_data(file_name)
+# base_dir = Path(__file__).resolve().parent.parent
+# file_path = base_dir.parent / "document/data.pdf"
+# document_processing_service.load_data(file_name)
 
-    # from pydantic import BaseModel
-    #
-    # class Chunk(BaseModel):
-    #     content: str
-    #
-    # collect_chunks = document_processing_service.load_and_split(
-    #     "/var/folders/6t/v83d99117854dgl8q81766tr0000gn/T/tmplsqye9eq.pdf"
-    # )
-    #
-    # all_chunks = [Chunk(content=chunk) for chunk in collect_chunks]
-    # print(all_chunks)
+# from pydantic import BaseModel
+#
+# class Chunk(BaseModel):
+#     content: str
+#
+# collect_chunks = document_processing_service.load_and_split(
+#     "/var/folders/6t/v83d99117854dgl8q81766tr0000gn/T/tmplsqye9eq.pdf"
+# )
+#
+# all_chunks = [Chunk(content=chunk) for chunk in collect_chunks]
+# print(all_chunks)

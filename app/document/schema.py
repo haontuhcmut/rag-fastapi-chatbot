@@ -25,7 +25,7 @@ class DocumentDBResponse(CreateDocumentDB):
     created_at: datetime
     updated_at: datetime
 
-class UpdateDocumentDB(DocumentDBResponse):
+class UpdateDocumentDB(BaseModel):
     status: StatusEnum
 
 class ChunkPreviewResponse(BaseModel):
