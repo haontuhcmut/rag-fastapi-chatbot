@@ -1,12 +1,12 @@
 from fastapi import APIRouter, UploadFile, status, Depends
 from app.document.schema import DocumentDBResponse, ChunkPreviewResponse
-from app.document.services import DocumentService
+from app.document.services import DocumentServices
 from fastapi_pagination import Page, paginate
 from app.core.dependency import SessionDep
 from app.auth.dependency import RoleChecker, AccessTokenBearer
 from typing import Annotated
 
-document_services = DocumentService()
+document_services = DocumentServices()
 document_router = APIRouter()
 
 

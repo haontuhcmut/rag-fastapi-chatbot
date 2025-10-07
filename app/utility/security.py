@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.config import Config
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 serialize = URLSafeSerializer(
@@ -53,4 +53,3 @@ def create_access_token(
         payload=payload, key=Config.SECRET_KEY, algorithm=Config.ALGORITHM
     )
     return token
-

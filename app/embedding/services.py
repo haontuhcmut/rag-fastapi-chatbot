@@ -1,6 +1,8 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.responses import JSONResponse
 from app.utility.doc_processor import DocProcessor
+from app.document.services import DocumentServices
+from app.document.schema import UpdateDocumentDB
 from app.core.model import Chunk
 from sqlmodel import select
 from fastapi import HTTPException
@@ -8,11 +10,12 @@ import psycopg
 from pgvector.psycopg import register_vector
 from app.config import Config
 import numpy as np
-from uuid import UUID, uuid4
+from uuid import UUID
 import logging
 
 PSYCOPG_CONNECT = Config.PSYCOPG_CONNECT
 doc_processor = DocProcessor()
+document_services = DocumentServices()
 logger = logging.getLogger(__name__)
 
 
@@ -63,4 +66,8 @@ class EmbeddingServices:
                         chunk_count += 1
 
             logger.info(f"Inserted {chunk_count} chunks from {document_id}")
+            _update_doc_status = await document_service.update_document(
+                document_id, UpdateDocumentDB(status="embedding"), session
+            )
+            await session.commit()
             return JSONResponse(status_code=201, content={"message": "Document is embedded successfully"})

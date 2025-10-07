@@ -1,4 +1,4 @@
-from app.document.services import DocumentService
+from app.document.services import DocumentServices
 from sqlmodel.ext.asyncio.session import AsyncSession
 from pathlib import Path
 from app.utility.doc_processor import DocProcessor
@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 import logging
 
 logger = logging.getLogger(__name__)
-document_service = DocumentService()
+document_service = DocumentServices()
 document_processor = DocProcessor()
 
 

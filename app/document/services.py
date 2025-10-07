@@ -23,7 +23,7 @@ from minio.error import MinioException
 logger = logging.getLogger(__name__)
 
 
-class DocumentService:
+class DocumentServices:
     async def get_all_document(self, session: AsyncSession) -> Page[DocumentDBResponse]:
         statement = select(Document).order_by(desc(Document.created_at))
         return await apaginate(session, statement)
