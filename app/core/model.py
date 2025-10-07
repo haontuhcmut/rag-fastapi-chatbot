@@ -20,9 +20,9 @@ class Embedding(SQLModel, table=True):
 
     CREATE INDEX embedding_idx ON item USING hnsw (embedding vector_l2_ops);
     """
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
-    chunk_id: UUID = Field(default=None, index=True, foreign_key="chunk.id", nullable=False)
+    chunk_id: UUID = Field(default=None, foreign_key="chunk.id", nullable=False, index=True)
     vector: Any | None = Field(sa_column=sa.Column(Vector(768)))
     document_id: UUID = Field(default=None, foreign_key="document.id", nullable=False)
     created_at: datetime = Field(
@@ -89,7 +89,7 @@ class KnowledgeBase(SQLModel, table=True):
         )
     )
 
-    documents: list["Document"] = Relationship(back_populates="knowledge_base")
+    documents: list["Document"] = Relationship(back_populates="knowledge_base", cascade_delete=True)
     user: User | None = Relationship(back_populates="knowledge_base")
 
 
@@ -120,7 +120,7 @@ class Chunk(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
     document_id: UUID = Field(default=None, foreign_key="document.id", nullable=False)
-    content: str = Field(default=None, max_length=1024)
+    content: str = Field(default=None, max_length=1024, index=True)
     created_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
@@ -132,7 +132,7 @@ class Chunk(SQLModel, table=True):
 
     user: User | None = Relationship(back_populates="chunks")
     documents: list["Document"] = Relationship(back_populates="chunks")
-    embedding: Embedding | None = Relationship(back_populates="chunk")
+    embedding: Embedding | None = Relationship(back_populates="chunk", cascade_delete=True)
 
 
 class Chat(SQLModel, table=True):

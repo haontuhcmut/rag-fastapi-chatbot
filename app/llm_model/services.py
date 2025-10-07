@@ -4,7 +4,7 @@ from langchain_ollama import ChatOllama
 from sqlmodel.ext.asyncio.session import AsyncSession
 from langchain_core.prompts import MessagesPlaceholder
 from uuid import UUID
-from app.searching.services import SearchService
+from app.utility.search import SearchService
 from app.config import Config
 from app.message.services import MessageService
 from app.message.schema import MessageSchema

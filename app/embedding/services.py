@@ -36,9 +36,9 @@ class EmbeddingServices:
             with conn.cursor() as cur:
                 chunk_count = 0
                 with cur.copy(
-                    "COPY embedding (id, user_id, document_id, chunk_id, vector) FROM STDIN WITH (FORMAT BINARY)",
+                    "COPY embedding (user_id, document_id, chunk_id, vector) FROM STDIN WITH (FORMAT BINARY)",
                 ) as copy:
-                    copy.set_types(["uuid", "uuid", "uuid", "uuid", "vector"])
+                    copy.set_types(["uuid", "uuid", "uuid", "vector"])
 
                     # Batch encode
                     vectors = doc_processor.encode(texts=collect_content_chunks)
@@ -58,7 +58,7 @@ class EmbeddingServices:
                     )
                     for u_id, doc_id, chunk, vector in zipper:
                         copy.write_row(
-                            [uuid4(), u_id, doc_id, chunk, vector.tolist()]
+                            [u_id, doc_id, chunk, vector.tolist()]
                         ) # Convert back to list for pgvector
                         chunk_count += 1
 

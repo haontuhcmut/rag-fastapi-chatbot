@@ -1,9 +1,9 @@
 from app.knownledge_base.schema import CreateKnowledgeBase, KnowledgeBaseResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.core.model import KnowledgeBase
+from app.core.model import KnowledgeBase, Document
 from uuid import UUID
 from fastapi import HTTPException
-from sqlmodel import desc, select
+from sqlmodel import desc, select, delete
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlmodel import apaginate
 

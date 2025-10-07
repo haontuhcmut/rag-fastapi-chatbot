@@ -1,8 +1,8 @@
 """init
 
-Revision ID: e0ea5c19da3d
+Revision ID: 48267dffa6fe
 Revises: 
-Create Date: 2025-10-06 12:43:33.448966
+Create Date: 2025-10-07 09:45:30.476598
 
 """
 from typing import Sequence, Union
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e0ea5c19da3d'
+revision: str = '48267dffa6fe'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -95,8 +95,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_chunk_content'), 'chunk', ['content'], unique=False)
     op.create_table('embedding',
-    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('chunk_id', sa.Uuid(), nullable=False),
     sa.Column('vector', pgvector.sqlalchemy.vector.VECTOR(dim=768), nullable=True),
@@ -119,6 +120,7 @@ def downgrade() -> None:
     op.drop_index('sqlmodel_index', table_name='embedding', postgresql_using='hnsw', postgresql_with={'m': 16, 'ef_construction': 64}, postgresql_ops={'vector': 'vector_l2_ops'})
     op.drop_index(op.f('ix_embedding_chunk_id'), table_name='embedding')
     op.drop_table('embedding')
+    op.drop_index(op.f('ix_chunk_content'), table_name='chunk')
     op.drop_table('chunk')
     op.drop_table('message')
     op.drop_index(op.f('ix_document_file_hash'), table_name='document')
