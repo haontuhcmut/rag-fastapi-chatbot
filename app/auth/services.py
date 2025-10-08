@@ -121,7 +121,7 @@ class UserService:
                         "user_id": str(user.id),  # string type is required
                         "role": user.role,
                     },
-                    expire_delta=timedelta(Config.ACCESS_TOKEN_EXPIRE_MINUTES),
+                    expire_delta=timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES),
                     refresh=False,
                 )
 

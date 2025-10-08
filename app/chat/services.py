@@ -1,17 +1,18 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.chat.schema import ChatSchema
 from app.core.model import Chat
 from sqlmodel import select, desc
 from fastapi_pagination.ext.sqlmodel import apaginate
 from uuid import UUID
+from app.auth.schema import UserModel
 
 
 class ChatService:
-    async def create_new_chat(self, chat: ChatSchema, session:AsyncSession):
-        chat_dict = chat.model_dump()
-        new_chat = Chat(**chat_dict)
+    async def create_new_chat(self, user: UserModel, session:AsyncSession):
+        username = user.username
+        data_dict = dict(username=username)
+        new_chat = Chat(**data_dict)
         session.add(new_chat)
         await session.commit()
         return new_chat
@@ -27,18 +28,10 @@ class ChatService:
             raise HTTPException(status_code=404, detail= "Chat not found")
         return result
 
-    async def update_chat(self, chat_id: str, data_update: ChatSchema, session: AsyncSession):
-        chat = await self.get_chat_id(chat_id=chat_id, session=session)
-        for key, value in data_update.items():
-            setattr(chat, key, value)
-        await session.commit()
-        return chat
-
     async def delete_chat(self, chat_id: str, session: AsyncSession):
         chat = await self.get_chat_id(chat_id=chat_id, session=session)
         await session.delete(chat)
         await session.commit()
         return JSONResponse(
-            status_code=200,
             content={"message": "The chat is deleted successfully"},
         )
