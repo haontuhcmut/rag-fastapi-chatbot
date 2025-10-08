@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from uuid import UUID
 
 class CreateChunk(BaseModel):
-    user_id: UUID
+    username: str
     document_id: UUID
     content: str
 

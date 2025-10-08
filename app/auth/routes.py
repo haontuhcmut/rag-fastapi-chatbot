@@ -18,6 +18,7 @@ from app.auth.dependency import get_current_user, RefreshTokenBearer, AccessToke
 from app.utility.security import create_access_token
 from app.core.redis import add_jti_blocklist
 
+
 user_service = UserService()
 oauth_router = APIRouter()
 

@@ -13,14 +13,14 @@ kb_services = KnownledgeBaseService()
 kb_router = APIRouter()
 
 
-@kb_router.get("/", response_model=Page[KnowledgeBaseResponse])
-async def get_all_knowledge_base(session: SessionDep, _: Annotated[dict, Depends(AccessTokenBearer())]):
+@kb_router.get("/", response_model=Page[KnowledgeBaseResponse], dependencies=[Depends(AccessTokenBearer())])
+async def get_all_knowledge_base(session: SessionDep):
     kb = await kb_services.get_all_knowledge_bases(session)
     return kb
 
 
-@kb_router.get("/{kb_id}", response_model=KnowledgeBaseResponse)
-async def get_knowledge_base(session: SessionDep, kb_id: str, _: Annotated[dict, Depends(AccessTokenBearer())]):
+@kb_router.get("/{kb_id}", response_model=KnowledgeBaseResponse, dependencies=[Depends(AccessTokenBearer())])
+async def get_knowledge_base(session: SessionDep, kb_id: str):
     kb = await kb_services.get_knowledge_base(kb_id, session)
     return kb
 
@@ -35,15 +35,15 @@ async def create_knowledge_base(
     return kb
 
 
-@kb_router.put("/{kb_id}", response_model=KnowledgeBaseResponse)
-async def update_knowledge_base(kb_id: str, data_update: CreateKnowledgeBase, session: SessionDep,
-                                _: Annotated[dict, Depends(AccessTokenBearer())]):
-    update_kb = await kb_services.update_knowledge_base(kb_id, data_update, session)
+@kb_router.put("/{kb_id}", response_model=KnowledgeBaseResponse, dependencies=[Depends(AccessTokenBearer())])
+async def update_knowledge_base(kb_id: str, user: Annotated[UserModel, Depends(get_current_user)],
+                                data_update: CreateKnowledgeBase, session: SessionDep):
+    update_kb = await kb_services.update_knowledge_base(kb_id, user, data_update, session)
     return update_kb
 
 
-@kb_router.delete("/{kb_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_knowledge_base(session: SessionDep, kb_id: str, _: Annotated[dict, Depends(AccessTokenBearer())]):
+@kb_router.delete("/{kb_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(AccessTokenBearer())])
+async def delete_knowledge_base(session: SessionDep, kb_id: str):
     kb = await kb_services.delete_knowledge_base(kb_id, session)
     if kb is None:
         return JSONResponse(content={"message": "Knowledge is deleted!"})

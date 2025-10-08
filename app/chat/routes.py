@@ -13,7 +13,7 @@ chat_router = APIRouter()
 
 
 @chat_router.get("/", response_model=Page[ChatResponse])
-async def get_all_chat(session: SessionDep, _params: Annotated[Params, Depends()]):
+async def get_all_chat(session: SessionDep):
     categories = await chat_services.get_all_chat(session)
     return categories
 

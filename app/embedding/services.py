@@ -1,5 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.responses import JSONResponse
+
+from app.auth.schema import UserModel
 from app.utility.doc_processor import DocProcessor
 from app.document.services import DocumentServices
 from app.document.schema import UpdateDocumentDB
@@ -10,7 +12,6 @@ import psycopg
 from pgvector.psycopg import register_vector
 from app.config import Config
 import numpy as np
-from uuid import UUID
 import logging
 
 PSYCOPG_CONNECT = Config.PSYCOPG_CONNECT
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingServices:
     async def create_embedding(
-        self, user_id: str, document_id: str, session: AsyncSession
+        self, user: UserModel, document_id: str, session: AsyncSession
     ):
         statement = select(Chunk).where(Chunk.document_id == document_id)
         result = await session.exec(statement)
@@ -39,9 +40,9 @@ class EmbeddingServices:
             with conn.cursor() as cur:
                 chunk_count = 0
                 with cur.copy(
-                    "COPY embedding (user_id, document_id, chunk_id, vector) FROM STDIN WITH (FORMAT BINARY)",
+                    "COPY embedding (username, document_id, chunk_id, vector) FROM STDIN WITH (FORMAT BINARY)",
                 ) as copy:
-                    copy.set_types(["uuid", "uuid", "uuid", "vector"])
+                    copy.set_types(["text", "uuid", "uuid", "vector"])
 
                     # Batch encode
                     vectors = doc_processor.encode(texts=collect_content_chunks)
@@ -54,7 +55,7 @@ class EmbeddingServices:
                     # Write to database (fixed zip: repeat document_id for each chunk
 
                     zipper = zip(
-                        [UUID(user_id)] * len(collect_content_chunks),
+                        [user.username] * len(collect_content_chunks),
                         collect_doc_id,
                         collect_chunk_id,
                         vectors_np,
@@ -66,8 +67,8 @@ class EmbeddingServices:
                         chunk_count += 1
 
             logger.info(f"Inserted {chunk_count} chunks from {document_id}")
-            _update_doc_status = await document_service.update_document(
-                document_id, UpdateDocumentDB(status="embedding"), session
+            _update_doc_status = await document_services.update_document(
+                document_id, user, UpdateDocumentDB(status="embedding"), session
             )
             await session.commit()
             return JSONResponse(status_code=201, content={"message": "Document is embedded successfully"})

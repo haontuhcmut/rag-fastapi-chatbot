@@ -34,17 +34,17 @@ class KnownledgeBaseService:
         return await apaginate(session, statement)
 
     async def update_knowledge_base(
-        self, kb_id: str, data_update: CreateKnowledgeBase, session: AsyncSession
-    ):
+        self, kb_id: str, user: UserModel, data_update: CreateKnowledgeBase, session: AsyncSession
+    ) -> KnowledgeBaseResponse:
         kb_item = await self.get_knowledge_base(
             kb_id, session
-        )  # class instance is output
-        for key, value in data_update.model_dump().items():
+        )
+        data_update = data_update.model_dump()
+        data_update["username"] = user.username
+        for key, value in data_update.items():
             setattr(kb_item, key, value)
         await session.commit()
-        return KnowledgeBaseResponse.model_validate(
-            kb_item, from_attributes=True
-        )  # add non dict type
+        return kb_item
 
     async def delete_knowledge_base(self, kb_id: str, session: AsyncSession):
         kb_item = await self.get_knowledge_base(kb_id, session)

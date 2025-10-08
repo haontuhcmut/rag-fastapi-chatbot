@@ -2,6 +2,7 @@ import logging
 import tempfile
 import hashlib
 from fastapi import UploadFile, HTTPException
+from fastapi.responses import JSONResponse
 from app.document.schema import (
     DocumentDBResponse,
     CreateDocumentDB,
@@ -18,7 +19,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlmodel import apaginate
 from sqlmodel import desc, select
 from minio.error import MinioException
-
+from app.auth.schema import UserModel
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,12 @@ class DocumentServices:
         else:
             return doc
 
-    async def update_document(self, doc_id: str, data_update: UpdateDocumentDB, session: AsyncSession) -> DocumentDBResponse:
+    async def update_document(self, doc_id: str, user: UserModel, data_update: UpdateDocumentDB,
+                              session: AsyncSession) -> DocumentDBResponse:
         doc = await self.get_document(doc_id, session)
-        for key, value in data_update.model_dump().items():
+        data_update = data_update.model_dump()
+        data_update["username"] = user.username
+        for key, value in data_update.items():
             setattr(doc, key, value)
         await session.commit()
         return doc
@@ -56,10 +60,10 @@ class DocumentServices:
         await session.delete(doc)
         await session.commit()
         logger.info(f"Document {doc.id}' deleted successfully")
-        return None
+        return JSONResponse(content={"message": "Deleted is successfully."})
 
     async def upload_document(
-        self, file: UploadFile, kb_id: str, user_id: str, session: AsyncSession
+            self, file: UploadFile, kb_id: str, user: UserModel, session: AsyncSession
     ):
         """Step 1: Upload document to MinIO"""
         content = await file.read()
@@ -78,7 +82,7 @@ class DocumentServices:
 
         content_types = {
             ".pdf": "application/pdf",
-            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", #word file
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # word file
             ".md": "text/markdown",
             ".txt": "text/plain",
         }
@@ -106,7 +110,7 @@ class DocumentServices:
             file_size=file_size,
             content_type=content_type,
             file_hash=file_hash,
-            user_id=UUID(user_id),
+            username=user.username,
             knowledge_base_id=UUID(kb_id),
         )
 
@@ -131,4 +135,3 @@ class DocumentServices:
             )
             temp_path = temp_file.name
         return temp_path
-

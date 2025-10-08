@@ -16,7 +16,7 @@ class UploadDocument(BaseModel):
     file_hash: str
 
 class CreateDocumentDB(UploadDocument):
-    user_id: UUID
+    username: str
     knowledge_base_id: UUID
 
 class DocumentDBResponse(CreateDocumentDB):
