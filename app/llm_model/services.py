@@ -25,9 +25,11 @@ def clean_think_tags(text: str) -> str:
 # LLM config
 llm = ChatOllama(
     model=Config.LLM_MODEL,
+    base_url=Config.OLLAMA_HOST,
     temperature=0.01,
     num_predict=1024,
-    validate_model_on_init=True,
+    verbose=True,
+    validate_model_on_init=True, # Connection checking
 )
 
 async def generate_response(

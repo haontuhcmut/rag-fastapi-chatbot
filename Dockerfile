@@ -26,6 +26,10 @@ RUN chmod +x entrypoint.sh
 # Copy the rest of the application
 COPY . .
 
+## Create uploads directory
+#RUN mkdir -p uploads
+#RUN mkdir -p models
+
 # Set Python path and environment
 ENV PYTHONPATH=/app
 ENV ENVIRONMENT=development

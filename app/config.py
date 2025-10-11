@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     BACKEND_URL: str
 
     EMBEDDING_MODEL: str
-    HF_TOKEN: str
     LLM_MODEL:str
+    OLLAMA_HOST:str
 
     DOMAIN_NAME: str
     VERSION: str

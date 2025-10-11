@@ -9,6 +9,7 @@ services:
     depends_on:
       - backend
       - minio
+      - ollama
     networks:
       - app_network
     healthcheck:
@@ -37,11 +38,9 @@ services:
     environment:
       - DEBUG=1
       - PYTHONUNBUFFERED=1
-      - HF_TOKEN=${HF_TOKEN}
     volumes:
       - .:/app
       - ./uploads:/app/uploads
-      - ./hf_model:/app/huggingface
     networks:
       - app_network
     depends_on:
@@ -64,6 +63,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    container_name: ollama
     pull_policy: always
     ports:
       - "11435:11434"
@@ -71,16 +71,20 @@ services:
       - .env
     environment:
       - LLM_MODEL=${LLM_MODEL}
+      - OLLAMA_HOST=${OLLAMA_HOST}
     volumes:
-      - ./models:/app/models
+      - ./ollama_models:/root/.ollama
     networks:
       - app_network
-    entrypoint: [ "/bin/sh", "-c" ]
-    command: >
-        ollama serve && ollama pull "$LLM_MODEL" && wait
+    restart: unless-stopped
+    entrypoint: [ "/bin/sh", "-c", "\
+      ollama serve & \
+      sleep 10 && \
+      ollama pull $LLM_MODEL && \
+      wait" ]
 
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      test: [ "CMD", "curl", "-f", "http://host.docker.internal:11434/api/tags" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -88,7 +92,7 @@ services:
 
   db:
     image: pgvector/pgvector:pg17-trixie
-    container_name: pgvector-db
+    container_name: db
     environment:
       - POSTGRES_USER= ${POSTGRES_USER}
       - POSTGRES_PASSWORD= ${POSTGRES_PASSWORD}

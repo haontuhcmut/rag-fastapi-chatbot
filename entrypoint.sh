@@ -44,9 +44,8 @@ else
 fi
 # Download the model specified in MODEL_NAME
 if [ -n "$EMBEDDING_MODEL" ]; then
-    hf download "$EMBEDDING_MODEL" --local-dir ./huggingface
+    hf download "$EMBEDDING_MODEL"
     echo "EMBEDDING_MODEL download completed."
-    hf cache scan
 else
     echo "EMBEDDING_MODEL not set. Exiting."
     exit 1
