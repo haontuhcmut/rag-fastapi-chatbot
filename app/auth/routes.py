@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from typing import Annotated
 from fastapi.responses import JSONResponse
+from fastapi_pagination import Page
 from datetime import datetime
 
 from app.auth.schema import (
@@ -83,3 +84,5 @@ async def reset_account_password(
         token, password, session
     )
     return user_to_reset_password
+
+#@oauth_router.get("/api-keys/", response_model=Page[])

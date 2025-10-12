@@ -1,9 +1,13 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from fastapi.templating import Jinja2Templates
-from fastapi import status
+from fastapi import status, HTTPException
 from fastapi.responses import JSONResponse
 from datetime import timedelta
+from uuid import UUID
+from fastapi_pagination.ext.sqlmodel import apaginate
+import secrets
+from datetime import datetime
 
 from app.auth.schema import (
     CreateUserModel,
@@ -11,9 +15,13 @@ from app.auth.schema import (
     TokenModel,
     PasswordResetRequestModel,
     PasswordResetConfirm,
+    UserModel,
+    APIKeyResponse,
+    APIKeyUpdate,
+    APIKeyLastUserUpdate
 )
 from app.config import Config
-from app.core.model import User
+from app.core.model import User, APIKey
 from app.error import (
     EmailAlreadyExist,
     UsernameAlreadyExist,
@@ -45,7 +53,6 @@ class UserService:
         return user
 
     async def create_user(self, user_data: CreateUserModel, session: AsyncSession):
-
         user_data_dict = user_data.model_dump(exclude={"password"})
         new_user = User(**user_data_dict)
         new_user.hashed_password = get_hashed_password(user_data.password)
@@ -188,3 +195,60 @@ class UserService:
             content={"message": "Error occurred during password reset."},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+class APIKeyService:
+    async def get_api_keys(self, user_id: UserModel, session: AsyncSession):
+        statement = select(APIKey).where(APIKey.user_id == user_id)
+        return await apaginate(session, statement)
+
+    async def create_api_key(self, user_id: UserModel, name: str, session: AsyncSession) -> APIKeyResponse:
+        api_key = APIKey(
+            key = f"sk-{secrets.token_hex(32)}",
+            name=name,
+            user_id=user_id.id,
+            is_active = True,
+        )
+        session.add(api_key)
+        await session.commit()
+        return api_key
+
+    async def get_api_key(self, api_key_id: str, session: AsyncSession) -> APIKeyResponse:
+        statement = select(APIKey).where(APIKey.id == UUID(api_key_id))
+        result = await session.exec(statement)
+        api_key = result.first()
+        if api_key is None:
+            raise HTTPException(status_code=404, detail="Not found api key")
+        return api_key
+
+    async def get_api_key_by_key(self, api_key: str, session: AsyncSession) -> APIKeyResponse:
+        statement = select(APIKey).where(APIKey.key == api_key)
+        result = await session.exec(statement)
+        api_key = result.first()
+        if api_key is None:
+            raise HTTPException(status_code=404, detail="Not found api key")
+        return api_key
+
+    async def update_api_key(self, api_key: str, update_data: APIKeyUpdate, session: AsyncSession) -> APIKeyResponse:
+        api_key_self = self.get_api_key_by_key(api_key, session)
+        for key, value in update_data.model_dump(exclude_unset=True).items():
+            setattr(api_key_self, key, value)
+        await session.commit()
+        return api_key_self
+
+    async def delete_api_key(self, api_key: str, session: AsyncSession):
+        api_key_self = self.get_api_key_by_key(api_key, session)
+        await session.delete(api_key_self)
+        await session.commit()
+        return JSONResponse(status_code=204, content={"message": "Api key is deleted successfully"})
+
+    async def update_last_user(self, api_key: str, session: AsyncSession) -> APIKeyResponse:
+        api_key_self = self.get_api_key_by_key(api_key, session)
+        time_now =  datetime.now(datetime.UTC)
+        data_update = APIKeyLastUserUpdate(last_user_at=time_now)
+        for key, value in data_update.model_dump(exclude_unset=True).items():
+            setattr(api_key_self, key, value)
+        await session.commit()
+        return api_key_self
+
+
+

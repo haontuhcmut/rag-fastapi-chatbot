@@ -66,6 +66,28 @@ class User(SQLModel, table=True):
         )
     )
 
+    api_key: Optional["APIKey"] = Relationship(back_populates="api_key", cascade_delete=True)
+
+class APIKey(SQLModel, table=True):
+    __tablename__ = "api_key"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    key: str = Field(default=None, unique=True, index=True, nullable=False)
+    name: str = Field(default=None, nullable=False)
+    user_id: UUID = Field(default=None, foreign_key="user.id", nullable=False)
+    is_active: bool = Field(default=True, nullable=False)
+    last_user_at: datetime | None = Field(sa_column=Column(DateTime(timezone=True), nullable=True))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    updated_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        )
+    )
+
+    users: list[User] = Relationship(back_populates="user")
+
 class KnowledgeBase(SQLModel, table=True):
     __tablename__ = "knowledge_base"
 

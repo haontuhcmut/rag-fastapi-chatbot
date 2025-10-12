@@ -5,12 +5,13 @@ import jwt
 from itsdangerous import URLSafeSerializer
 from passlib.context import CryptContext
 from datetime import timedelta, timezone, datetime
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 
 from app.config import Config
 
 pwd_context = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
-oauth_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 serialize = URLSafeSerializer(
     secret_key=Config.SECRET_KEY,
@@ -53,3 +54,4 @@ def create_access_token(
         payload=payload, key=Config.SECRET_KEY, algorithm=Config.ALGORITHM
     )
     return token
+

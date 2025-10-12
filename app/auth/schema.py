@@ -1,6 +1,8 @@
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic import BaseModel, Field, field_validator
 import re
+from datetime import datetime
+from uuid import UUID
 
 
 class CreateUserModel(BaseModel):
@@ -47,6 +49,7 @@ class TokenModel(AccessTokenModel):
 
 
 class UserModel(BaseModel):
+    id: UUID
     username: str
     last_name: str
     first_name: str
@@ -80,3 +83,33 @@ class PasswordResetConfirm(BaseModel):
         if 'password' in info.data and v != info.data['password']:
             raise ValueError("Passwords do not match.")
         return v
+
+
+class APIKeyBase(BaseModel):
+    name: str
+    is_active: bool = True
+
+
+class APIKeyCreate(APIKeyBase):
+    pass
+
+
+class APIKeyUpdate(BaseModel):
+    name: str | None = None
+    is_active: bool | None = None
+
+
+class APIKeyLastUserUpdate(BaseModel):
+    last_user_at: datetime
+
+
+class APIKeyResponse(APIKeyBase):
+    id: UUID
+    key: str
+    user_id: int
+    last_used_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
