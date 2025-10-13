@@ -91,8 +91,6 @@ async def generate_response(
         "Dựa trên câu hỏi đã được định dạng lại, lịch sử trò chuyện, và dữ liệu tham khảo, "
         "hãy cung cấp một câu trả lời đầy đủ, chi tiết và dễ hiểu bằng tiếng Việt. "
         "Đảm bảo câu trả lời bao quát tất cả các khía cạnh liên quan đến câu hỏi, "
-        "Nếu không có thông tin nào thì trả lời vui lòng liên hệ "
-        "Đường dây nóng 02822212797 hoặc Email info@quatest3.com.vn để biết thêm chi tiết."
     )
     answer_prompt = ChatPromptTemplate.from_messages(
         [
