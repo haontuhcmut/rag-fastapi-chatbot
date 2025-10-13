@@ -1,5 +1,5 @@
 from pydantic_core.core_schema import FieldValidationInfo
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 import re
 from datetime import datetime
 from uuid import UUID
@@ -27,11 +27,11 @@ class CreateUserModel(BaseModel):
             raise ValueError("Must contain at least one special character.")
         return v
 
-    @field_validator("confirm_password")
-    def passwords_match(cls, v, info: FieldValidationInfo):
-        if 'password' in info.data and v != info.data['password']:
+    @model_validator(mode="after")
+    def check_passwords_match(self):
+        if self.new_password != self.confirm_new_password:
             raise ValueError("Passwords do not match.")
-        return v
+        return self
 
 
 class UserLoginModel(BaseModel):
@@ -78,11 +78,11 @@ class PasswordResetConfirm(BaseModel):
             raise ValueError("Must contain at least one special character.")
         return v
 
-    @field_validator("confirm_new_password")
-    def passwords_match(cls, v, info: FieldValidationInfo):
-        if 'password' in info.data and v != info.data['password']:
+    @model_validator(mode="after")
+    def check_passwords_match(self):
+        if self.new_password != self.confirm_new_password:
             raise ValueError("Passwords do not match.")
-        return v
+        return self
 
 
 class APIKeyBase(BaseModel):
@@ -106,7 +106,7 @@ class APIKeyLastUserUpdate(BaseModel):
 class APIKeyResponse(APIKeyBase):
     id: UUID
     key: str
-    user_id: int
+    user_id: UUID
     last_used_at: datetime | None = None
     created_at: datetime
     updated_at: datetime

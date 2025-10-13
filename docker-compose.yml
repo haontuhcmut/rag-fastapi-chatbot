@@ -12,17 +12,6 @@ services:
       - ollama
     networks:
       - app_network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   backend:
     build:
@@ -55,11 +44,6 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   ollama:
     image: ollama/ollama:latest
@@ -101,7 +85,7 @@ services:
     env_file:
       - ./.env
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - psql_data:/var/lib/postgresql/data
     networks:

@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi_pagination.ext.sqlmodel import apaginate
 import secrets
 from datetime import datetime
+from fastapi_pagination import Page
 
 from app.auth.schema import (
     CreateUserModel,
@@ -128,7 +129,7 @@ class UserService:
                         "user_id": str(user.id),  # string type is required
                         "role": user.role,
                     },
-                    expire_delta=timedelta(days=Config.ACCESS_TOKEN_EXPIRE_MINUTES), #for testing 30d
+                    expire_delta=timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES),
                     refresh=False,
                 )
 
@@ -196,9 +197,9 @@ class UserService:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-class APIKeyService:
-    async def get_api_keys(self, user_id: UserModel, session: AsyncSession):
-        statement = select(APIKey).where(APIKey.user_id == user_id)
+class APIKeyServices:
+    async def get_api_keys(self, user_id: UserModel, session: AsyncSession) -> Page[APIKeyResponse]:
+        statement = select(APIKey).where(APIKey.user_id == user_id.id)
         return await apaginate(session, statement)
 
     async def create_api_key(self, user_id: UserModel, name: str, session: AsyncSession) -> APIKeyResponse:
@@ -228,27 +229,24 @@ class APIKeyService:
             raise HTTPException(status_code=404, detail="Not found api key")
         return api_key
 
-    async def update_api_key(self, api_key: str, update_data: APIKeyUpdate, session: AsyncSession) -> APIKeyResponse:
-        api_key_self = self.get_api_key_by_key(api_key, session)
+    async def update_api_key(self, api_key_id: str, update_data: APIKeyUpdate, session: AsyncSession) -> APIKeyResponse:
+        api_key_self = await self.get_api_key(api_key_id, session)
         for key, value in update_data.model_dump(exclude_unset=True).items():
             setattr(api_key_self, key, value)
         await session.commit()
-        return api_key_self
+        return APIKeyResponse.model_validate(api_key_self)
 
-    async def delete_api_key(self, api_key: str, session: AsyncSession):
-        api_key_self = self.get_api_key_by_key(api_key, session)
+    async def delete_api_key(self, api_key_id: str, session: AsyncSession):
+        api_key_self = await self.get_api_key(api_key_id, session)
         await session.delete(api_key_self)
         await session.commit()
         return JSONResponse(status_code=204, content={"message": "Api key is deleted successfully"})
 
     async def update_last_user(self, api_key: str, session: AsyncSession) -> APIKeyResponse:
-        api_key_self = self.get_api_key_by_key(api_key, session)
+        api_key_self = await self.get_api_key_by_key(api_key, session)
         time_now =  datetime.now(datetime.UTC)
         data_update = APIKeyLastUserUpdate(last_user_at=time_now)
         for key, value in data_update.model_dump(exclude_unset=True).items():
             setattr(api_key_self, key, value)
         await session.commit()
         return api_key_self
-
-
-

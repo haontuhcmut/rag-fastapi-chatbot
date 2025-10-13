@@ -66,7 +66,7 @@ class User(SQLModel, table=True):
         )
     )
 
-    api_key: Optional["APIKey"] = Relationship(back_populates="api_key", cascade_delete=True)
+    api_key: Optional["APIKey"] = Relationship(back_populates="users", cascade_delete=True)
 
 class APIKey(SQLModel, table=True):
     __tablename__ = "api_key"
@@ -86,7 +86,7 @@ class APIKey(SQLModel, table=True):
         )
     )
 
-    users: list[User] = Relationship(back_populates="user")
+    users: list[User] = Relationship(back_populates="api_key")
 
 class KnowledgeBase(SQLModel, table=True):
     __tablename__ = "knowledge_base"

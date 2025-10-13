@@ -15,4 +15,4 @@ class MessageResponse(MessageSchema):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attribute = True

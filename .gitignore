@@ -5,3 +5,5 @@
 *.pyc
 *.rdb
 docker.env
+/ollama_models/
+/uploads/
