@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- BrandMark: blue ring with triple golden wedges -->
+  <circle cx="16" cy="16" r="13" fill="#1976D2" />
+  <circle cx="16" cy="16" r="7.12" fill="#ffffff" />
+
+  <!-- Triple wedge segments -->
+  <path d="M 28.61 12.854 A 13 13 0 0 1 28.051 20.875 L 22.606 18.670 A 7.12 7.12 0 0 0 22.905 14.276 Z" fill="#FFD700" />
+  <path d="M 28.051 20.875 A 13 13 0 0 1 22.889 27.024 L 19.774 22.046 A 7.12 7.12 0 0 0 22.606 18.670 Z" fill="#FFD700" />
+  <path d="M 22.889 27.024 A 13 13 0 0 1 15.093 28.968 L 15.503 23.103 A 7.12 7.12 0 0 0 19.774 22.046 Z" fill="#FFD700" />
+</svg>
